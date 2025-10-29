@@ -10,6 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ResumeStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -96,11 +103,4 @@ model Result {
   resume          Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@map("results")
-}
-
-enum ResumeStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
 }

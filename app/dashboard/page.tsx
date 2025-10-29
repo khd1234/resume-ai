@@ -2,13 +2,16 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResumeUpload } from "@/components/resume-upload";
+import { ResumeList } from "@/components/resume-list";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -32,6 +35,10 @@ export default function DashboardPage() {
     signOut({ callbackUrl: "/" });
   };
 
+  const handleUploadSuccess = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
@@ -50,18 +57,18 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <Card>
               <CardHeader>
                 <CardTitle>Profile</CardTitle>
-                <CardDescription>View and manage your profile information</CardDescription>
+                <CardDescription>Your account information</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p>
+                  <p className="text-sm">
                     <strong>Email:</strong> {session.user?.email}
                   </p>
-                  <p>
+                  <p className="text-sm">
                     <strong>Name:</strong> {session.user?.name || "Not set"}
                   </p>
                   {session.user?.image && (
@@ -71,32 +78,19 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-                <Button className="mt-4" onClick={() => router.push("/profile")}>
+                <Button className="mt-4 w-full" variant="outline" onClick={() => router.push("/profile")}>
                   Edit Profile
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Resume Upload</CardTitle>
-                <CardDescription>Upload and analyze your resumes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4">Upload your resume to get AI-powered analysis and insights.</p>
-                <Button disabled>Upload Resume (Coming Soon)</Button>
-              </CardContent>
-            </Card>
+            <div className="lg:col-span-2">
+              <ResumeUpload onUploadSuccess={handleUploadSuccess} />
+            </div>
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Analysis</CardTitle>
-                <CardDescription>View your recent resume analysis</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">No resumes analyzed yet. Upload your first resume to get started!</p>
-              </CardContent>
-            </Card>
+          <div className="mt-6">
+            <ResumeList refreshTrigger={refreshTrigger} />
           </div>
         </div>
       </main>
