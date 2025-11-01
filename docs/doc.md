@@ -106,7 +106,6 @@ status - completed
 - User Stories:
   - View all uploaded resumes with status (Pending/Processed)
   - View detailed analysis per resume (score, skills, summary)
-  - Download processed report (PDF/CSV)
   - Real-time updates (“Processing → Completed”)
 
 ### Epic 6: Observability & Monitoring

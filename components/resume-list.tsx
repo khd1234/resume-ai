@@ -34,6 +34,21 @@ export function ResumeList({ refreshTrigger }: ResumeListProps) {
     fetchResumes();
   }, [refreshTrigger]);
 
+  // Auto-refresh every 10 seconds if any resume is PENDING or PROCESSING
+  useEffect(() => {
+    const hasProcessingResumes = resumes.some(
+      (r) => r.status === "PENDING" || r.status === "PROCESSING"
+    );
+
+    if (!hasProcessingResumes) return;
+
+    const interval = setInterval(() => {
+      fetchResumes();
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [resumes]);
+
   const fetchResumes = async () => {
     try {
       setLoading(true);
@@ -126,7 +141,8 @@ export function ResumeList({ refreshTrigger }: ResumeListProps) {
             {resumes.map((resume) => (
               <div
                 key={resume.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => window.location.href = `/dashboard/resume/${resume.id}`}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3 flex-1">
                   <FileText className="h-5 w-5 text-gray-400" />
