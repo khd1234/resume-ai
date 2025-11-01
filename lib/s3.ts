@@ -26,10 +26,10 @@ export async function generatePresignedUploadUrl(
 ): Promise<{ url: string; key: string }> {
   const { userId, filename, contentType } = options;
 
-  // Generate unique S3 key: resumes/{userId}/{timestamp}-{filename}
+  // Generate unique S3 key: uploads/{userId}/{timestamp}-{filename}
   const timestamp = Date.now();
   const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const key = `resumes/${userId}/${timestamp}-${sanitizedFilename}`;
+  const key = `uploads/${userId}/${timestamp}-${sanitizedFilename}`;
 
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET!,

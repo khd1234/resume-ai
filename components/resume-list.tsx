@@ -12,8 +12,12 @@ interface Resume {
   uploadedAt: string;
   result?: {
     score: number | null;
+    atsScore?: number | null;
+    contentScore?: number | null;
     extractedSkills: string[];
-    summary: string | null;
+    recommendations?: string[];
+    strengths?: string[];
+    improvementAreas?: string[];
   };
 }
 
@@ -147,11 +151,14 @@ export function ResumeList({ refreshTrigger }: ResumeListProps) {
                       <p className="text-sm font-semibold text-gray-900">
                         Score: {resume.result.score.toFixed(1)}
                       </p>
-                      {resume.result.extractedSkills.length > 0 && (
-                        <p className="text-xs text-gray-500">
-                          {resume.result.extractedSkills.length} skills
-                        </p>
-                      )}
+                      <div className="flex gap-2 text-xs text-gray-500">
+                        {resume.result.atsScore !== null && resume.result.atsScore !== undefined && (
+                          <span>ATS: {resume.result.atsScore.toFixed(0)}</span>
+                        )}
+                        {resume.result.extractedSkills.length > 0 && (
+                          <span>{resume.result.extractedSkills.length} skills</span>
+                        )}
+                      </div>
                     </div>
                   )}
                   <Badge

@@ -70,26 +70,26 @@
   - Logout (session invalidated) ✅
   - View profile (email and account info displayed) ✅
 
-### Epic 2: Resume Upload Flow
+### Epic 2: Resume Upload Flow - Completed ✅
 
-- Goal: Users can upload resumes securely
+- Goal: Users can upload resumes securely ✅
 - User Stories:
-  - Select resume (PDF/DOCX) with file type and size validation
-  - Backend generates pre-signed S3 URL
-  - Frontend uploads directly to S3
-  - Store metadata in RDS (filename, userId, status=Pending)
+  - Select resume (PDF/DOCX) with file type and size validation ✅
+  - Backend generates pre-signed S3 URL ✅
+  - Frontend uploads directly to S3 ✅
+  - Store metadata in RDS (filename, userId, status=Pending) ✅
 
-### Epic 3: Resume Processing (Lambda) - Completed
+### Epic 3: Resume Processing (Lambda) - Completed ✅
 
 status - completed
 
-- Goal: Automatically parse and analyze uploaded resumes
+- Goal: Automatically parse and analyze uploaded resumes ✅
 - User Stories:
-  - Lambda triggered by S3 event
-  - Parse resume to extract key info
-  - Generate score/summary
-  - Publish result to SQS/SNS
-  - Log errors to CloudWatch
+  - Lambda triggered by S3 event ✅
+  - Parse resume to extract key info ✅
+  - Generate score/summary ✅
+  - Publish result to SQS/SNS ✅
+  - Log errors to CloudWatch ✅
 
 ### Epic 4: Result Handling & Storage
 

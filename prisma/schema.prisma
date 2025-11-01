@@ -94,13 +94,35 @@ model Resume {
 model Result {
   id              String   @id @default(cuid())
   resumeId        String   @unique
-  score           Float?
-  extractedSkills String[] // Array of skills
-  summary         String?  @db.Text
-  createdAt       DateTime @default(now())
+  
+  // Overall Scores
+  score           Float?   // Overall score (0-100)
+  atsScore        Float?   // ATS compatibility score
+  contentScore    Float?   // Content quality score
+  keywordDensity  Float?   // Keyword density score
+  
+  // Section Scores (from Lambda analysis)
+  contactScore         Float?  // Contact information score
+  summaryScore         Float?  // Professional summary score
+  experienceScore      Float?  // Work experience score
+  educationScore       Float?  // Education score
+  skillsScore          Float?  // Skills section score
+  formattingScore      Float?  // Formatting score
+  
+  // Extracted Data
+  extractedSkills      String[] // Keywords/skills found in resume
+  
+  // Analysis Results (structured arrays)
+  recommendations      String[] // Improvement recommendations
+  strengths            String[] // Resume strengths
+  improvementAreas     String[] // Areas needing improvement
+  
+  // Metadata
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
   
   // Relations
-  resume          Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resume               Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 
   @@map("results")
 }

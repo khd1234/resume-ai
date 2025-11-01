@@ -85,8 +85,12 @@ export async function GET(req: NextRequest) {
         result: {
           select: {
             score: true,
+            atsScore: true,
+            contentScore: true,
             extractedSkills: true,
-            summary: true,
+            recommendations: true,
+            strengths: true,
+            improvementAreas: true,
           },
         },
       },
