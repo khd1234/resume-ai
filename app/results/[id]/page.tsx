@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Navbar } from "@/components/navbar";
 import { ArrowLeft, FileText, Loader2, Clock, CheckCircle, XCircle, Upload as UploadIcon } from "lucide-react";
 import { ScoreBreakdown } from "@/components/score-breakdown";
 import { SkillsDisplay } from "@/components/skills-display";
@@ -112,6 +113,7 @@ export default function ResultsPage() {
   if (loading && !resume) {
     return (
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -124,6 +126,7 @@ export default function ResultsPage() {
   if (error || !resume) {
     return (
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Button
             variant="ghost"
@@ -148,6 +151,7 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">

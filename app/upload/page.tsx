@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Navbar } from "@/components/navbar";
 import { Upload, FileText, CheckCircle, XCircle, Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 
 interface UploadState {
@@ -52,11 +53,7 @@ export default function UploadPage() {
 
   const validateFile = (file: File): string | null => {
     // Validate file type
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/msword",
-    ];
+    const allowedTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];
     if (!allowedTypes.includes(file.type)) {
       return "Please select a PDF or DOCX file.";
     }
@@ -111,7 +108,7 @@ export default function UploadPage() {
       setUploadState({
         status: "error",
         progress: 0,
-        message: session 
+        message: session
           ? "You've reached your upload limit. Please try again later or contact support."
           : "You've reached the guest upload limit. Please sign in for more uploads.",
       });
@@ -119,111 +116,90 @@ export default function UploadPage() {
     }
 
     try {
+      // Start upload in background
+      const uploadPromise = (async () => {
+        // Prepare request body
+        const requestBody: any = {
+          filename: selectedFile.name,
+          contentType: selectedFile.type,
+          fileSize: selectedFile.size,
+        };
+
+        // Add session ID for guest users
+        if (!session) {
+          requestBody.guestSessionId = getSessionId();
+        }
+
+        // Step 1: Get pre-signed URL from backend
+        const uploadResponse = await fetch("/api/resume/upload", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(error.error || "Failed to get upload URL");
+        }
+
+        const { uploadUrl, s3Key } = await uploadResponse.json();
+
+        // Step 2: Upload file to S3 using pre-signed URL
+        const s3Response = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": selectedFile.type,
+          },
+          body: selectedFile,
+        });
+
+        if (!s3Response.ok) {
+          throw new Error("Failed to upload file to S3");
+        }
+
+        // Step 3: Save resume metadata to database
+        const metadataBody: any = {
+          s3Key,
+          filename: selectedFile.name,
+        };
+
+        // Add guest tracking info if not authenticated
+        if (!session) {
+          metadataBody.guestSessionId = getSessionId();
+        }
+
+        const metadataResponse = await fetch("/api/resume", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(metadataBody),
+        });
+
+        if (!metadataResponse.ok) {
+          const error = await metadataResponse.json();
+          throw new Error(error.error || "Failed to save resume metadata");
+        }
+
+        const { resumeId: newResumeId } = await metadataResponse.json();
+        return newResumeId;
+      })();
+
+      // Immediately redirect to a placeholder or loading page
+      // We'll use a temporary resume ID or navigate immediately
       setUploadState({
         status: "uploading",
-        progress: 10,
-        message: "Requesting upload URL...",
+        progress: 50,
+        message: "Processing...",
       });
 
-      // Prepare request body
-      const requestBody: any = {
-        filename: selectedFile.name,
-        contentType: selectedFile.type,
-        fileSize: selectedFile.size,
-      };
+      // Wait for upload to complete
+      const newResumeId = await uploadPromise;
 
-      // Add session ID for guest users
-      if (!session) {
-        requestBody.guestSessionId = getSessionId();
-      }
-
-      // Step 1: Get pre-signed URL from backend
-      const uploadResponse = await fetch("/api/resume/upload", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!uploadResponse.ok) {
-        const error = await uploadResponse.json();
-        throw new Error(error.error || "Failed to get upload URL");
-      }
-
-      const { uploadUrl, s3Key } = await uploadResponse.json();
-
-      setUploadState({
-        status: "uploading",
-        progress: 30,
-        message: "Uploading to S3...",
-      });
-
-      // Step 2: Upload file to S3 using pre-signed URL
-      const s3Response = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": selectedFile.type,
-        },
-        body: selectedFile,
-      });
-
-      if (!s3Response.ok) {
-        throw new Error("Failed to upload file to S3");
-      }
-
-      setUploadState({
-        status: "uploading",
-        progress: 70,
-        message: "Saving metadata...",
-      });
-
-      // Step 3: Save resume metadata to database
-      const metadataBody: any = {
-        s3Key,
-        filename: selectedFile.name,
-      };
-
-      // Add guest tracking info if not authenticated
-      if (!session) {
-        metadataBody.guestSessionId = getSessionId();
-      }
-
-      const metadataResponse = await fetch("/api/resume", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(metadataBody),
-      });
-
-      if (!metadataResponse.ok) {
-        const error = await metadataResponse.json();
-        throw new Error(error.error || "Failed to save resume metadata");
-      }
-
-      const { resumeId: newResumeId } = await metadataResponse.json();
-      setResumeId(newResumeId);
-
-      setUploadState({
-        status: "success",
-        progress: 100,
-        message: "Resume uploaded successfully!",
-      });
-
-      // Update upload limit
-      fetchUploadLimit();
-
-      // Reset file input
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      // Redirect to results page after 2 seconds
-      setTimeout(() => {
-        router.push(`/results/${newResumeId}`);
-      }, 2000);
+      // Navigate to results page immediately
+      router.push(`/results/${newResumeId}`);
     } catch (error) {
       console.error("Upload error:", error);
       setUploadState({
@@ -238,38 +214,7 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <Link href="/">
-              <h1 className="text-2xl font-bold text-gray-900 cursor-pointer">Resume AI</h1>
-            </Link>
-            <div className="space-x-4">
-              {authStatus === "loading" ? (
-                <div className="text-sm text-gray-500">Loading...</div>
-              ) : session ? (
-                <>
-                  <Link href="/dashboard">
-                    <Button variant="outline">Dashboard</Button>
-                  </Link>
-                  <span className="text-sm text-gray-600">
-                    {session.user?.email}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Link href="/auth/signin">
-                    <Button variant="outline">Sign in</Button>
-                  </Link>
-                  <Link href="/auth/signup">
-                    <Button>Sign Up</Button>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
@@ -282,12 +227,8 @@ export default function UploadPage() {
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Get Your Resume Score
-          </h1>
-          <p className="text-lg text-gray-600">
-            Upload your resume and receive instant AI-powered analysis
-          </p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Get Your Resume Score</h1>
+          <p className="text-lg text-gray-600">Upload your resume and receive instant AI-powered analysis</p>
         </div>
 
         {/* Upload Limit Info */}
@@ -298,29 +239,25 @@ export default function UploadPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${isLimitReached ? "bg-red-100" : "bg-blue-100"}`}>
-                      {isLimitReached ? (
-                        <AlertCircle className="h-5 w-5 text-red-600" />
-                      ) : (
-                        <FileText className="h-5 w-5 text-blue-600" />
-                      )}
+                      {isLimitReached ? <AlertCircle className="h-5 w-5 text-red-600" /> : <FileText className="h-5 w-5 text-blue-600" />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {session ? "Logged-in User" : "Guest User"}
-                      </p>
+                      <p className="text-sm font-medium text-gray-900">{session ? "Logged-in User" : "Guest User"}</p>
                       <p className="text-sm text-gray-600">
                         {uploadLimit.current} of {uploadLimit.max} uploads used today
                       </p>
                     </div>
                   </div>
-                  <Badge variant={isLimitReached ? "destructive" : "secondary"}>
-                    {uploadLimit.max - uploadLimit.current} remaining
-                  </Badge>
+                  <Badge variant={isLimitReached ? "destructive" : "secondary"}>{uploadLimit.max - uploadLimit.current} remaining</Badge>
                 </div>
                 {!session && (
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-900">
-                      💡 <Link href="/auth/signup" className="font-semibold underline">Sign up</Link> to get 5 uploads per day and save your resume history!
+                      💡{" "}
+                      <Link href="/auth/signup" className="font-semibold underline">
+                        Sign up
+                      </Link>{" "}
+                      to get 5 uploads per day and save your resume history!
                     </p>
                   </div>
                 )}
@@ -333,9 +270,7 @@ export default function UploadPage() {
         <Card>
           <CardHeader>
             <CardTitle>Upload Your Resume</CardTitle>
-            <CardDescription>
-              We accept PDF or DOCX files (max 2MB). Your resume will be analyzed in 30-60 seconds.
-            </CardDescription>
+            <CardDescription>We accept PDF or DOCX files (max 2MB). Your resume will be analyzed in 30-60 seconds.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -374,37 +309,16 @@ export default function UploadPage() {
                   <FileText className="h-6 w-6 text-blue-600" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-blue-900">{selectedFile.name}</p>
-                    <p className="text-xs text-blue-700">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                    <p className="text-xs text-blue-700">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
                 </div>
               )}
 
-              {/* Upload Progress */}
+              {/* Upload Progress - Only show if there's an error or uploading */}
               {uploadState.status === "uploading" && (
-                <div className="space-y-2">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadState.progress}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {uploadState.message}
-                  </div>
-                </div>
-              )}
-
-              {/* Success Message */}
-              {uploadState.status === "success" && (
-                <div className="flex items-center gap-2 p-4 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-green-900">{uploadState.message}</p>
-                    <p className="text-xs text-green-700 mt-1">Redirecting to results...</p>
-                  </div>
+                <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 rounded-lg">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                  <p className="text-sm font-medium text-blue-900">Preparing your analysis...</p>
                 </div>
               )}
 
@@ -426,7 +340,7 @@ export default function UploadPage() {
                 {uploadState.status === "uploading" ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Uploading...
+                    Processing...
                   </>
                 ) : (
                   <>
@@ -446,9 +360,7 @@ export default function UploadPage() {
               <div className="text-center">
                 <div className="text-4xl mb-3">🔍</div>
                 <h3 className="font-semibold text-gray-900 mb-2">AI-Powered Analysis</h3>
-                <p className="text-sm text-gray-600">
-                  Get comprehensive insights with our advanced AI engine
-                </p>
+                <p className="text-sm text-gray-600">Get comprehensive insights with our advanced AI engine</p>
               </div>
             </CardContent>
           </Card>
@@ -458,9 +370,7 @@ export default function UploadPage() {
               <div className="text-center">
                 <div className="text-4xl mb-3">⚡</div>
                 <h3 className="font-semibold text-gray-900 mb-2">Instant Results</h3>
-                <p className="text-sm text-gray-600">
-                  Receive detailed feedback in under 60 seconds
-                </p>
+                <p className="text-sm text-gray-600">Receive detailed feedback in under 60 seconds</p>
               </div>
             </CardContent>
           </Card>
@@ -470,9 +380,7 @@ export default function UploadPage() {
               <div className="text-center">
                 <div className="text-4xl mb-3">🎯</div>
                 <h3 className="font-semibold text-gray-900 mb-2">Actionable Tips</h3>
-                <p className="text-sm text-gray-600">
-                  Get specific recommendations to improve your resume
-                </p>
+                <p className="text-sm text-gray-600">Get specific recommendations to improve your resume</p>
               </div>
             </CardContent>
           </Card>
