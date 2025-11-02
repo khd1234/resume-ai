@@ -117,6 +117,20 @@ status - completed
   - Test SNS → Next.js webhook locally via ngrok
   - Debug failed uploads or processing
 
+### Epic 7: Guest User Upload & Rate Limiting - Completed ✅
+
+- Goal: Allow non-logged-in (guest) users to upload and analyze resumes, with upload limits to prevent abuse. Logged-in users have higher limits. Guests can seamlessly upgrade by signing in. ✅
+- User Stories:
+  - Guest users can upload resumes without authentication ✅
+  - Both guest users and registered user has the same results page and reuse logged in user functionality ✅
+  - Remove the existing results page (app/dashboard/resume/[id]) for logged in user from the dashboard and use that layout in the newly created results page. ✅
+  - Track guest uploads to enforce rate limits (3 uploads for guests) ✅
+  - Logged-in users have higher limits (5 uploads) ✅
+  - Dashboard shows upgrade prompt for guests who want unlimited uploads ✅
+  - Centralized upload page accessible to both guest and authenticated users ✅
+  - Dashboard focuses on viewing/managing resumes, remove direct upload option from dashboard and link it with a button "Get your resume score" ✅
+  - Link to upload page on the home page with button "Get your resume score" ✅
+
 ---
 
 ## 6. Database Schema (Simplified)
@@ -147,3 +161,7 @@ status - completed
 - Optional: WebSocket/polling updates user in real-time
 
 ---
+
+<!-- Check for security issues like user continously uploading to s3-->
+<!-- Other security vulnerabilities -->
+<!-- Clean up file from s3 or direct upload to lambda instead of s3 -->

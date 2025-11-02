@@ -141,7 +141,7 @@ export function ResumeList({ refreshTrigger }: ResumeListProps) {
             {resumes.map((resume) => (
               <div
                 key={resume.id}
-                onClick={() => window.location.href = `/dashboard/resume/${resume.id}`}
+                onClick={() => window.location.href = `/results/${resume.id}`}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3 flex-1">

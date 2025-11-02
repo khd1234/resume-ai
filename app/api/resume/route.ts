@@ -7,7 +7,14 @@ import { z } from "zod";
 const createResumeSchema = z.object({
   s3Key: z.string().min(1),
   filename: z.string().min(1).max(255),
+  guestSessionId: z.string().optional(), // For guest users
 });
+
+async function getClientIp(req: NextRequest): Promise<string> {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const realIp = req.headers.get("x-real-ip");
+  return forwarded?.split(",")[0] || realIp || "unknown";
+}
 
 const getResumesSchema = z.object({
   limit: z.number().optional().default(10),
@@ -16,11 +23,8 @@ const getResumesSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    // Check authentication
+    // Check authentication (optional for guests)
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     // Parse and validate request body
     const body = await req.json();
@@ -33,21 +37,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { s3Key, filename } = validationResult.data;
+    const { s3Key, filename, guestSessionId } = validationResult.data;
+
+    // For guest users, require session ID
+    if (!session?.user?.id && !guestSessionId) {
+      return NextResponse.json(
+        { error: "Session ID is required for guest uploads" },
+        { status: 400 }
+      );
+    }
+
+    const ipAddress = await getClientIp(req);
 
     // Create resume record in database
     const resume = await prisma.resume.create({
       data: {
-        userId: session.user.id,
+        userId: session?.user?.id || null,
         s3Key,
         filename,
         status: "PENDING",
+        guestSessionId: !session?.user?.id ? guestSessionId : null,
+        guestIpAddress: !session?.user?.id ? ipAddress : null,
       },
     });
 
+    // Create guest upload record for tracking if this is a guest upload
+    if (!session?.user?.id && guestSessionId) {
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+      
+      await prisma.guestUpload.create({
+        data: {
+          sessionId: guestSessionId,
+          ipAddress,
+          expiresAt,
+        },
+      });
+    }
+
     return NextResponse.json(
       {
-        id: resume.id,
+        resumeId: resume.id,
         filename: resume.filename,
         status: resume.status,
         uploadedAt: resume.uploadedAt,

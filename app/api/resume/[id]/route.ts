@@ -10,22 +10,10 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
+    // Fetch resume - allow access for both authenticated users and guests
     const resume = await prisma.resume.findUnique({
       where: {
         id: params.id,
-        userId: user.id,
       },
       include: {
         result: {
@@ -52,6 +40,22 @@ export async function GET(
     if (!resume) {
       return NextResponse.json({ error: "Resume not found" }, { status: 404 });
     }
+
+    // If resume belongs to a user, check if the requesting user is authorized
+    if (resume.userId) {
+      if (!session?.user?.email) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+      });
+
+      if (!user || resume.userId !== user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+    // For guest resumes (userId is null), allow access without authentication
 
     return NextResponse.json({ resume });
   } catch (error) {

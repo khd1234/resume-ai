@@ -78,17 +78,37 @@ model VerificationToken {
 
 model Resume {
   id         String   @id @default(cuid())
-  userId     String
+  userId     String?  // Optional for guest uploads
   s3Key      String   // S3 object key
   filename   String
   status     ResumeStatus @default(PENDING)
   uploadedAt DateTime @default(now())
   
+  // Guest tracking (for non-authenticated uploads)
+  guestSessionId String? // Session ID for guest users
+  guestIpAddress String? // IP address for guest users
+  
   // Relations
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   result     Result?
 
   @@map("resumes")
+}
+
+// Track guest uploads for rate limiting
+model GuestUpload {
+  id             String   @id @default(cuid())
+  sessionId      String?  // Browser session ID
+  ipAddress      String?  // User IP address
+  uploadedAt     DateTime @default(now())
+  
+  // For cleanup - delete old records after 24 hours
+  expiresAt      DateTime // Set to 24 hours from uploadedAt
+  
+  @@index([sessionId])
+  @@index([ipAddress])
+  @@index([expiresAt])
+  @@map("guest_uploads")
 }
 
 model Result {

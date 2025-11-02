@@ -120,11 +120,12 @@ async function handleProcessingStarted(payload: ProcessingStartedPayload, userId
   try {
     console.log("Handling processing started:", payload.file_key);
 
-    // Find the resume by S3 key and update status to PROCESSING
+    // Find the resume by S3 key
+    // For guest uploads, userId from S3 key is "guest" but database userId is null
     const resume = await prisma.resume.findFirst({
       where: {
         s3Key: payload.file_key,
-        userId: userId,
+        userId: userId === "guest" ? null : userId,
       },
     });
 
@@ -153,10 +154,11 @@ async function handleProcessingCompleted(payload: ProcessingCompletedPayload, us
     console.log("Handling processing completed:", payload.file_key);
 
     // Find the resume by S3 key
+    // For guest uploads, userId from S3 key is "guest" but database userId is null
     const resume = await prisma.resume.findFirst({
       where: {
         s3Key: payload.file_key,
-        userId: userId,
+        userId: userId === "guest" ? null : userId,
       },
     });
 
@@ -251,10 +253,11 @@ async function handleProcessingError(payload: ProcessingErrorPayload, userId: st
     console.log("Handling processing error:", payload.file_key);
 
     // Find the resume by S3 key
+    // For guest uploads, userId from S3 key is "guest" but database userId is null
     const resume = await prisma.resume.findFirst({
       where: {
         s3Key: payload.file_key,
-        userId: userId,
+        userId: userId === "guest" ? null : userId,
       },
     });
 

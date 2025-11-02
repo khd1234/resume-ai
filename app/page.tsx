@@ -49,23 +49,23 @@ export default function HomePage() {
             Upload your resume and get instant AI-powered analysis, skills extraction, and improvement suggestions.
           </p>
           <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+            <div className="rounded-md shadow">
+              <Link href="/upload">
+                <Button size="lg" className="w-full">
+                  Get Your Resume Score
+                </Button>
+              </Link>
+            </div>
             {session ? (
-              <div className="rounded-md shadow">
+              <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
                 <Link href="/dashboard">
-                  <Button size="lg" className="w-full">
+                  <Button variant="outline" size="lg" className="w-full">
                     Go to Dashboard
                   </Button>
                 </Link>
               </div>
             ) : (
               <>
-                <div className="rounded-md shadow">
-                  <Link href="/auth/signup">
-                    <Button size="lg" className="w-full">
-                      Get Started Free
-                    </Button>
-                  </Link>
-                </div>
                 <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
                   <Link href="/auth/signin">
                     <Button variant="outline" size="lg" className="w-full">
