@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "./ui/dropdown-menu";
 import { User, LogOut, LayoutDashboard, Upload as UploadIcon } from "lucide-react";
 
 interface NavbarProps {
