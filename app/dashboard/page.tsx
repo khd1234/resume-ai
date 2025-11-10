@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
@@ -63,7 +64,7 @@ export default function DashboardPage() {
                   {session.user?.image && (
                     <div>
                       <strong>Avatar:</strong>
-                      <img src={session.user.image} alt="Profile" className="w-10 h-10 rounded-full mt-2" />
+                      <Image src={session.user.image} alt="Profile" width={40} height={40} className="rounded-full mt-2" />
                     </div>
                   )}
                 </div>

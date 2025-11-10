@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -47,20 +47,7 @@ export default function ResultsPage() {
 
   const isGuestUser = !session && resume && !resume.userId;
 
-  useEffect(() => {
-    fetchResumeDetails();
-    
-    // Auto-refresh every 5 seconds if status is PENDING or PROCESSING
-    const interval = setInterval(() => {
-      if (resume?.status === "PENDING" || resume?.status === "PROCESSING") {
-        fetchResumeDetails();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [params.id, resume?.status]);
-
-  const fetchResumeDetails = async () => {
+  const fetchResumeDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -82,7 +69,20 @@ export default function ResultsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchResumeDetails();
+    
+    // Auto-refresh every 5 seconds if status is PENDING or PROCESSING
+    const interval = setInterval(() => {
+      if (resume?.status === "PENDING" || resume?.status === "PROCESSING") {
+        fetchResumeDetails();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchResumeDetails, resume?.status]);
 
   const getStatusIcon = (status: Resume["status"]) => {
     switch (status) {

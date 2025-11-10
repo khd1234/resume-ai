@@ -1,3 +1,7 @@
 node_modules
-npm-debug.log
 .next
+.git
+.elasticbeanstalk
+.env
+Dockerfile
+npm-debug.log

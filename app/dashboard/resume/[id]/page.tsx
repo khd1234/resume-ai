@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,20 +40,7 @@ export default function ResumeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchResumeDetails();
-    
-    // Auto-refresh every 5 seconds if status is PENDING or PROCESSING
-    const interval = setInterval(() => {
-      if (resume?.status === "PENDING" || resume?.status === "PROCESSING") {
-        fetchResumeDetails();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [params.id, resume?.status]);
-
-  const fetchResumeDetails = async () => {
+  const fetchResumeDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -75,7 +62,20 @@ export default function ResumeDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchResumeDetails();
+    
+    // Auto-refresh every 5 seconds if status is PENDING or PROCESSING
+    const interval = setInterval(() => {
+      if (resume?.status === "PENDING" || resume?.status === "PROCESSING") {
+        fetchResumeDetails();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchResumeDetails, resume?.status]);
 
   const getStatusIcon = (status: Resume["status"]) => {
     switch (status) {
