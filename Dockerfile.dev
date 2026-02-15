@@ -1,0 +1,22 @@
+# Local Dev Dockerfile
+FROM node:20-alpine3.18
+
+WORKDIR /app
+
+# Install openssl (required for Prisma on Alpine)
+RUN apk add --no-cache openssl
+
+# Install dependencies first for caching
+COPY package*.json ./
+RUN npm install
+
+# Copy rest of the app
+COPY . .
+
+# Prisma generate
+RUN npx prisma generate
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]
+
