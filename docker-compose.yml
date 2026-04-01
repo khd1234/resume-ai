@@ -13,9 +13,11 @@ services:
       - .env.local
     depends_on:
       - postgres
+    restart: always
 
   postgres:
     image: postgres:15
+    container_name: resume-ai-db
     restart: always
     environment:
       POSTGRES_USER: postgres
