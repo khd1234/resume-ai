@@ -118,7 +118,6 @@ export default function UploadPage() {
     try {
       // Start upload in background
       const uploadPromise = (async () => {
-        // Prepare request body
         const requestBody: any = {
           filename: selectedFile.name,
           contentType: selectedFile.type,
