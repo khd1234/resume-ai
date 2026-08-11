@@ -1,32 +1,8 @@
+version: '3.8'
 services:
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: resume-ai-web
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
+    image: 888888837970.dkr.ecr.eu-north-1.amazonaws.com/resume-ai:latest
     env_file:
-      - .env.local
-    depends_on:
-      - postgres
-    restart: always
-
-  postgres:
-    image: postgres:15
-    container_name: resume-ai-db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: resumeai
+      - .env
     ports:
-      - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-
-volumes:
-  pg_data:
+      - "80:3000"

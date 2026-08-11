@@ -1,41 +1,38 @@
 # 1. Build stage
-FROM node:20-alpine3.18 AS builder
+FROM node:22-alpine AS builder
+
 WORKDIR /app
 
-# Install openssl compatibility
 RUN apk add --no-cache openssl
 
-# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Copy the rest of the app
 COPY . .
 
-# Generate Prisma client at build time
-RUN npx prisma generate --schema=./prisma/schema.prisma
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
+    npx prisma generate --schema=./prisma/schema.prisma
 
-# Build Next.js for production
-RUN npm run build
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
+    npm run build
 
-# Then prune devDependencies after build
 RUN npm prune --omit=dev
 
-ENV NODE_ENV=production
 
-# 2. Run stage
-FROM node:20-alpine3.18 AS runner
+# 2. Production stage
+FROM node:22-alpine AS runner
+
 WORKDIR /app
 
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./next.config.js
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-# Set environment variables
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+
 EXPOSE 3000
 
-# Start app
-CMD ["node_modules/.bin/next", "start"]
+CMD ["node", "server.js"]
